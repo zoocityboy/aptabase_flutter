@@ -15,4 +15,13 @@ When new content need to be added to the migration guide, make sure they're foll
 
 ### Summary
 
+- `Aptabase.init` now requires `AptabaseConfig` instead of `String` appKey.
+
 ### Details
+
+```diff
+- await Aptabase.init("A-DEV-000000");
++ await Aptabase.init(const AptabasConfig(
++    appKey: "A-DEV-000000",
++  ));
+```
