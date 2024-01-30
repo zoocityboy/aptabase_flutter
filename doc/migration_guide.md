@@ -16,7 +16,7 @@ When new content need to be added to the migration guide, make sure they're foll
 ### Summary
 
 - `Aptabase.init` now requires `AptabaseConfig` instead of `String` appKey.
-
+- Original `trackEvent` method is now renamed to `customTrackEvent` to avoid confusion with `AptabaseTrackEvent` class.
 ### Details
 
 ```diff
@@ -24,4 +24,24 @@ When new content need to be added to the migration guide, make sure they're foll
 + await Aptabase.init(const AptabasConfig(
 +    appKey: "A-DEV-000000",
 +  ));
+```
+
+```diff
+- Aptabase.instance.trackEvent("event_name", {
+-  "key": "value",
+- });
+
++ Aptabase.instance.customTrackEvent("event_name", {
++  "key": "value",
++ });
+```
+
+
+```diff
++ # Strong type event
++ class IncrementEvent extends AptabaseTrackEvent {
++   IncrementEvent(int counter) : super(eventName: "increment", props: <String, Object>{"counter": counter});
++ }
++ # Track event
++ Aptabase.instance.trackEvent(IncrementEvent(10));
 ```

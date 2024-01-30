@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:aptabase_flutter/aptabase_flutter.dart';
+import 'package:example/events.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
@@ -72,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _listener = AppLifecycleListener(
       onStateChange: (state) {
         debugPrint('trackEvent: $state');
-        unawaited(Aptabase.instance.trackEvent("app_lifecycle", {"state": state.toString()}));
+        unawaited(Aptabase.instance.trackEvent(LifeCycleEvent(state)));
       },
       onResume: () {
         debugPrint('trackEvent: onResume');
@@ -82,10 +83,6 @@ class _MyHomePageState extends State<MyHomePage> {
         debugPrint('trackEvent: onRestart');
         unawaited(Aptabase.instance.flush());
       },
-      // onExitRequested: () {
-      //   print('trackEvent: onExitRequested');
-      //   unawaited(Aptabase.instance.trackEvent("app_lifecycle", {"state": state.toString()}));
-      // },
     );
     super.initState();
   }
@@ -97,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _incrementCounter() {
-    Aptabase.instance.trackEvent("increment", {"counter": _counter});
+    Aptabase.instance.trackEvent(IncrementEvent(_counter));
 
     setState(() {
       // This call to setState tells the Flutter framework that something has

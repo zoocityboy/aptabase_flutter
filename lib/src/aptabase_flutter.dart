@@ -15,6 +15,7 @@ import 'domain/error/aptabase_exception.dart';
 import 'domain/error/aptabase_failure.dart';
 import 'domain/model/aptabase_config.dart';
 import 'domain/model/event_item.dart';
+import 'domain/model/aptabase_track_event.dart';
 import 'infrastructure/aptabase_api_client.dart';
 import 'infrastructure/aptabase_inmemory__storage.dart';
 import 'infrastructure/batch_processor.dart';
@@ -107,13 +108,25 @@ class Aptabase {
   }
 
   /// Records an event with the given name and optional properties.
-  Future<void> trackEvent(
+  Future<void> trackCustomEvent(
     String eventName, [
     Map<String, dynamic>? props,
   ]) async {
     final eventData = EventItem.create(
       eventName: eventName,
       props: props,
+      session: session,
+      systemInfo: systemInfo,
+    );
+    await storage.write(eventData);
+  }
+
+  Future<void> trackEvent(
+    AptabaseTrackEvent event,
+  ) async {
+    final eventData = EventItem.create(
+      eventName: event.eventName,
+      props: event.props,
       session: session,
       systemInfo: systemInfo,
     );
