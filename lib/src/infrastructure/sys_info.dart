@@ -1,17 +1,13 @@
-import 'package:universal_io/io.dart';
-
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:universal_io/io.dart';
+
+import '../domain/error/aptabase_exception.dart';
 
 /// System information about the current device.
+@protected
 class SystemInfo {
-  String osName;
-  String osVersion;
-  String appVersion;
-  String buildNumber;
-  String locale;
-
   SystemInfo._({
     required this.osName,
     required this.osVersion,
@@ -19,6 +15,21 @@ class SystemInfo {
     required this.buildNumber,
     required this.appVersion,
   });
+
+  /// The name of the operating system.
+  String osName;
+
+  /// The version of the operating system.
+  String osVersion;
+
+  /// The version of the application.
+  String appVersion;
+
+  /// The build number of the application.
+  String buildNumber;
+
+  /// The locale of the operating system.
+  String locale;
 
   static const String _kAndroidOsName = 'Android';
   static const String _kIPadOsName = 'iPadOS';
@@ -32,13 +43,13 @@ class SystemInfo {
   static const String _kIpadModelString = 'ipad';
 
   /// Returns the system information for the current device.
-  static Future<SystemInfo?> get() async {
+  static Future<SystemInfo> get() async {
     final deviceInfo = DeviceInfoPlugin();
     final packageInfo = await PackageInfo.fromPlatform();
 
     final osName = await _getOsName(deviceInfo);
     if (osName == null) {
-      return null;
+      throw const AptabaseNotSupportedPlatformException();
     }
 
     final osVersion = await _getOsVersion(deviceInfo);

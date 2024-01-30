@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:aptabase_flutter/aptabase_flutter.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Aptabase.init("A-DEV-0000000000");
+
+  await Aptabase.init(const AptabasConfig(
+    appKey: "A-EU-9204469084",
+    debug: true,
+  ));
 
   runApp(const MyApp());
 }
@@ -60,6 +66,35 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  late final AppLifecycleListener _listener;
+  @override
+  void initState() {
+    _listener = AppLifecycleListener(
+      onStateChange: (state) {
+        debugPrint('trackEvent: $state');
+        unawaited(Aptabase.instance.trackEvent("app_lifecycle", {"state": state.toString()}));
+      },
+      onResume: () {
+        debugPrint('trackEvent: onResume');
+        unawaited(Aptabase.instance.flush());
+      },
+      onRestart: () {
+        debugPrint('trackEvent: onRestart');
+        unawaited(Aptabase.instance.flush());
+      },
+      // onExitRequested: () {
+      //   print('trackEvent: onExitRequested');
+      //   unawaited(Aptabase.instance.trackEvent("app_lifecycle", {"state": state.toString()}));
+      // },
+    );
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _listener.dispose();
+    super.dispose();
+  }
 
   void _incrementCounter() {
     Aptabase.instance.trackEvent("increment", {"counter": _counter});

@@ -1,4 +1,10 @@
-include: package:flutter_lints/flutter.yaml
-
+include: package:zoo_lints/analysis_options.yaml
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+linter:
+  rules:
+    lines_longer_than_80_chars: false
+    comment_references: false
