@@ -1,5 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-part of 'event_item.dart';
+part of 'storage_event_item.dart';
 
 /// Represents the system properties of an event.
 ///

@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../domain/aptabase_storage.dart';
-import '../domain/model/event_item.dart';
-import 'logger.dart';
+import '../domain/model/storage_event_item.dart';
+import '../core/logger.dart';
 
 ///
 class AptabaseInMemoryStorage implements AptabaseStorage {
@@ -22,7 +22,7 @@ class AptabaseInMemoryStorage implements AptabaseStorage {
 
   ///
   @protected
-  final Map<int, EventItem> storage = {};
+  final Map<int, StorageEventItem> storage = {};
 
   @override
   Future<void> remove(int id) async {
@@ -35,7 +35,7 @@ class AptabaseInMemoryStorage implements AptabaseStorage {
   }
 
   @override
-  Future<EventItem?> read(int id) async {
+  Future<StorageEventItem?> read(int id) async {
     if (storage.containsKey(id)) {
       final item = storage[id];
       logger.info('read: event item $item', object: item);
@@ -48,14 +48,14 @@ class AptabaseInMemoryStorage implements AptabaseStorage {
   }
 
   @override
-  Future<List<EventItem>> readOffset({int limit = 10, int offset = 0}) async {
+  Future<List<StorageEventItem>> readOffset({int limit = 10, int offset = 0}) async {
     final items = storage.values.skip(offset).take(limit).toList();
     logger.info('readAll limit: $limit offset: $offset: $items', object: items);
     return items;
   }
 
   @override
-  Future<void> write(EventItem item) async {
+  Future<void> write(StorageEventItem item) async {
     logger.info('write: event item', object: item);
     storage[storage.length] = item;
     _counterStreamController.add(count());

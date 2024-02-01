@@ -2,7 +2,7 @@ import 'package:result_dart/result_dart.dart';
 import 'package:universal_io/io.dart';
 
 import 'error/aptabase_failure.dart';
-import 'model/event_item.dart';
+import 'model/storage_event_item.dart';
 
 /// Represents an abstract interface for an Aptabase client.
 /// This interface defines methods for creating requests,
@@ -12,10 +12,10 @@ abstract interface class AptabaseClient {
   Future<HttpClientRequest> createRequest(String path);
 
   /// Tracks a single [eventItem] and returns the result as a [Result] object.
-  Future<Result<Unit, AptabaseApiFailure>> trackEvent(EventItem eventItem);
+  Future<Result<Unit, AptabaseApiFailure>> trackEvent(StorageEventItem eventItem);
 
   /// Sends a list of [eventItems] and returns the result as a [Result] object.
   Future<Result<Unit, AptabaseApiFailure>> sendEvents(
-    List<EventItem> eventItems,
+    List<StorageEventItem> eventItems,
   );
 }

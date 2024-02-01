@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import '../../constants.dart';
+import '../../core/aptabase_constants.dart';
 import '../../infrastructure/session.dart';
-import '../../infrastructure/sys_info.dart';
+import '../../core/sys_info.dart';
 import '../extensions/datetime_extension.dart';
 
 part 'event_system_properties.dart';
@@ -15,21 +15,21 @@ part 'event_system_properties.dart';
 /// An event item contains information about an event that occurred in the application,
 /// such as the event name, properties, timestamp, session ID, and system properties.
 @immutable
-class EventItem {
+class StorageEventItem {
   final String eventName;
   final Map<String, dynamic>? props;
   final DateTime timestamp;
   final String sessionId;
   final EventSystemProperties systemProperties;
 
-  /// Constructs a new [EventItem] instance.
+  /// Constructs a new [StorageEventItem] instance.
   ///
   /// The [eventName] parameter is required and represents the name of the event.
   /// The [props] parameter is optional and represents additional properties associated with the event.
   /// The [timestamp] parameter is required and represents the timestamp when the event occurred.
   /// The [sessionId] parameter is required and represents the ID of the session when the event occurred.
   /// The [systemProperties] parameter is required and represents the system properties associated with the event.
-  const EventItem({
+  const StorageEventItem({
     required this.eventName,
     required this.timestamp,
     required this.sessionId,
@@ -37,13 +37,13 @@ class EventItem {
     this.props,
   });
 
-  /// Constructs a new [EventItem] instance using the provided parameters.
+  /// Constructs a new [StorageEventItem] instance using the provided parameters.
   ///
   /// The [session] parameter is required and represents the Aptabase session.
   /// The [systemInfo] parameter is required and represents the system information.
   /// The [eventName] parameter is required and represents the name of the event.
   /// The [props] parameter is optional and represents additional properties associated with the event.
-  factory EventItem.create({
+  factory StorageEventItem.create({
     required AptabaseSession session,
     required SystemInfo systemInfo,
     required String eventName,
@@ -56,9 +56,9 @@ class EventItem {
       locale: systemInfo.locale,
       appVersion: systemInfo.appVersion,
       appBuildNumber: systemInfo.buildNumber,
-      sdkVersion: Constants.sdkVersion,
+      sdkVersion: AptabaseConstants.sdkVersion,
     );
-    return EventItem(
+    return StorageEventItem(
       eventName: eventName,
       props: props,
       systemProperties: eventSystemProperties,
@@ -68,7 +68,7 @@ class EventItem {
   }
 
   @override
-  bool operator ==(covariant EventItem other) {
+  bool operator ==(covariant StorageEventItem other) {
     if (identical(this, other)) return true;
 
     return other.eventName == eventName &&
@@ -94,7 +94,7 @@ EventItem(
 )''';
   }
 
-  /// Converts the [EventItem] to a JSON string representation.
+  /// Converts the [StorageEventItem] to a JSON string representation.
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'timestamp': timestamp.toIso8601String(),

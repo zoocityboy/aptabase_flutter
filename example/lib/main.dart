@@ -7,10 +7,14 @@ import 'package:flutter/material.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Aptabase.init(const AptabasConfig(
+  (await Aptabase.init(const AptabasConfig(
     appKey: "A-EU-9204469084",
     debug: true,
-  ));
+  )))
+      .fold(
+    (failure) => debugPrint('Aptabase init failed: $failure'),
+    (_) => debugPrint('Aptabase init success'),
+  );
 
   runApp(const MyApp());
 }

@@ -1,6 +1,9 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/foundation.dart';
 
+import '../../core/aptabase_constants.dart';
+import '../../core/logger.dart';
+import '../aptabase_storage.dart';
 import '../enum/aptabase_hosts.dart';
 import '../error/aptabase_exception.dart';
 
@@ -23,6 +26,8 @@ import '../error/aptabase_exception.dart';
 /// The [baseUrl] property returns the base URL to be used for API requests based on the [customBaseUrl] and [host] properties.
 /// If [customBaseUrl] is specified and [host] is [AptabaseHosts.sh], the [customBaseUrl] will be used.
 /// Otherwise, the URL from the [host] enum value will be used.
+typedef AptabaseStorageBuilder = Future<AptabaseStorage> Function(Logger logger);
+
 @immutable
 class AptabasConfig {
   final String appKey;
@@ -31,14 +36,16 @@ class AptabasConfig {
   final Duration sessionTimeout;
   final Duration sheduledDelay;
   final int maxExportBatchSize;
+  final AptabaseStorageBuilder? storageBuilder;
 
   const AptabasConfig({
     required this.appKey,
     this.customBaseUrl,
     this.debug = false,
-    this.sessionTimeout = const Duration(hours: 1),
-    this.sheduledDelay = const Duration(seconds: 10),
-    this.maxExportBatchSize = 100,
+    this.sessionTimeout = AptabaseConstants.defaultSessionTimeout,
+    this.sheduledDelay = AptabaseConstants.defaultSheduledDelay,
+    this.maxExportBatchSize = AptabaseConstants.defaultMaxExportBatchSize,
+    this.storageBuilder,
   });
 
   @override
@@ -50,7 +57,8 @@ class AptabasConfig {
         other.customBaseUrl == customBaseUrl &&
         other.sessionTimeout == sessionTimeout &&
         other.sheduledDelay == sheduledDelay &&
-        other.maxExportBatchSize == maxExportBatchSize;
+        other.maxExportBatchSize == maxExportBatchSize &&
+        other.storageBuilder == storageBuilder;
   }
 
   @override
@@ -60,9 +68,11 @@ class AptabasConfig {
         customBaseUrl.hashCode ^
         sessionTimeout.hashCode ^
         sheduledDelay.hashCode ^
-        maxExportBatchSize.hashCode;
+        maxExportBatchSize.hashCode ^
+        storageBuilder.hashCode;
   }
 
+  /// Validates the app key.
   bool validateKey() {
     final parts = appKey.split('-');
     if (parts.isEmpty || parts.length != 3) {
@@ -71,6 +81,7 @@ class AptabasConfig {
     return true;
   }
 
+  /// Returns the host enum value based on the app key.
   AptabaseHosts get host => AptabaseHosts.values.firstWhere(
         (e) => e.name.toLowerCase() == appKey.split('-')[1].toLowerCase(),
       );

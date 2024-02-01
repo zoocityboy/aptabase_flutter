@@ -25,7 +25,7 @@ class AptabaseSession {
 
   /// Generates a new session ID based on the current timestamp and a random number.
   String newSessionId() {
-    final epochInSeconds = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+    final epochInSeconds = (DateTimeX.now.millisecondsSinceEpoch ~/ 1000).toString();
     final random = rnd.nextInt(100000000).toString().padLeft(8, '0');
 
     return epochInSeconds + random;

@@ -1,14 +1,16 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 
+import 'dart:isolate';
+
 import 'package:result_dart/functions.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:universal_io/io.dart';
 
-import '../constants.dart';
+import '../core/aptabase_constants.dart';
 import '../domain/aptabase_client.dart';
 import '../domain/error/aptabase_failure.dart';
 import '../domain/extensions/http_extensions.dart';
-import '../domain/model/event_item.dart';
+import '../domain/model/storage_event_item.dart';
 
 class AptabaseApiClient implements AptabaseClient {
   final String baseUrl;
@@ -31,27 +33,31 @@ class AptabaseApiClient implements AptabaseClient {
 
   @override
   Future<Result<Unit, AptabaseApiFailure>> sendEvents(
-    List<EventItem> eventItems,
+    List<StorageEventItem> eventItems,
   ) async {
-    try {
-      final request = await createRequest(ApiPath.batch);
-      final items = eventItems.map((e) => e.toJson()).toList();
-      final body = '[${items.map((e) => e).join(',')}]';
-      request.write(body);
-      final response = await request.close();
+    Future<Result<Unit, AptabaseApiFailure>> sendRequest() async {
+      try {
+        final request = await createRequest(ApiPath.batch);
+        final items = eventItems.map((e) => e.toJson()).toList();
+        final body = '[${items.map((e) => e).join(',')}]';
+        request.write(body);
+        final response = await request.close();
 
-      return switch (response.statusCode) {
-        (< 300) => successOf(unit),
-        (>= 400 && < 500) => Failure(NotFoundApiFailure(response.statusCode)),
-        _ => Failure(AptabaseApiFailure.tryParse(response)),
-      };
-    } catch (e) {
-      return Failure(AptabaseApiFailure.tryParse(e));
+        return switch (response.statusCode) {
+          (< 300) => successOf(unit),
+          (>= 400 && < 500) => Failure(NotFoundApiFailure(response.statusCode)),
+          _ => Failure(AptabaseApiFailure.tryParse(response)),
+        };
+      } catch (e) {
+        return Failure(AptabaseApiFailure.tryParse(e));
+      }
     }
+
+    return Isolate.run(sendRequest);
   }
 
   @override
-  Future<Result<Unit, AptabaseApiFailure>> trackEvent(EventItem eventItem) async {
+  Future<Result<Unit, AptabaseApiFailure>> trackEvent(StorageEventItem eventItem) async {
     try {
       final request = await createRequest(ApiPath.single);
       request.write(eventItem.toJson());

@@ -30,7 +30,7 @@ On your `main.dart`, import `package:aptabase_flutter/aptabase_flutter.dart` and
 ```diff
 void main() async {
 + WidgetsFlutterBinding.ensureInitialized();
-+ await Aptabase.init("<YOUR_APP_KEY>"); // 👈 this is where you enter your App Key
++ await Aptabase.init(AptabaseConfig(appKey: "<YOUR_APP_KEY>")); // 👈 this is where you enter your App Key
 
   runApp(const MyApp());
 }
@@ -43,12 +43,26 @@ Afterward, you can start tracking events with `Aptabase.instance` anywhere in yo
 ```dart
 import 'package:aptabase_flutter/aptabase_flutter.dart';
 
+/// Represents an event that increments a counter.
+///
+/// This event is used to track the increment action in the app.
+/// It contains the current value of the counter as a property.
+class IncrementEvent extends AptabaseTrackEvent {
+  IncrementEvent(int counter)
+      : super(
+          eventName: EventKeys.incrementEventName,
+          props: <String, Object>{"counter": counter},
+        );
+}
+
 class _CounterState extends State<Counter> {
   int _counter = 0;
 
   // Tracking how many times the user has clicked the button, alongside the current counter value
   void _incrementCounter() {
-    Aptabase.instance.trackEvent("increment", { "counter": _counter });
+    // Legacy, will be deprecated in the future
+    // Aptabase.instance.customTrackEvent("increment", { "counter": _counter });
+    Aptabase.instance.customTrackEvent(IncrementEvent(_counter);
     
     setState(() {
       _counter++;

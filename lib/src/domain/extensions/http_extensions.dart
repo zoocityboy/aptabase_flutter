@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:universal_io/io.dart';
 
-import '../../constants.dart';
+import '../../core/aptabase_constants.dart';
 
 /// Extension method on [HttpClientRequest] to add headers.
 ///
@@ -18,14 +18,14 @@ extension HttpClientRequestX on HttpClientRequest {
   /// Adds the necessary headers to the [HttpClientRequest] object.
   void addHeaders(String appKey) {
     headers
-      ..set(Constants.headerAppKey, appKey)
+      ..set(AptabaseConstants.headerAppKey, appKey)
       ..set(
         HttpHeaders.contentTypeHeader,
-        Constants.headerContentTypeValue,
+        AptabaseConstants.headerContentTypeValue,
       )
       ..set(HttpHeaders.contentEncodingHeader, 'gzip');
     if (!kIsWeb) {
-      headers.set(HttpHeaders.userAgentHeader, Constants.sdkVersion);
+      headers.set(HttpHeaders.userAgentHeader, AptabaseConstants.sdkVersion);
     }
   }
 }

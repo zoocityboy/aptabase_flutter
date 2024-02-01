@@ -8,7 +8,7 @@
 ///   CounterEvent(int counter) : super(
 ///     eventName: 'counter_event',
 ///     props: {
-///       'counter: counter,
+///       'counter': counter,
 ///     },
 ///   );
 /// }```
