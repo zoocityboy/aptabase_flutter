@@ -3,17 +3,14 @@ import 'dart:async';
 
 import 'package:result_dart/result_dart.dart';
 
-import '../core/aptabase_constants.dart';
-import '../domain/aptabase_storage.dart';
-import '../domain/error/aptabase_failure.dart';
-import '../domain/model/storage_event_item.dart';
-import '../core/logger.dart';
+import '../../core/core.dart';
+import '../../domain/domain.dart';
 
 /// A typedef representing a function that sends data and returns a `Future<Result<Unit, AptabaseApiFailure>>`.
 ///
 /// The `SendData` function takes a list of `StorageEventItem` data as input and returns a `Future` that resolves to a `Result` object.
 /// The `Result` object represents the success or failure of the API call, where `Unit` represents a successful result and `AptabaseApiFailure` represents a failure.
-typedef SendData = Future<Result<Unit, AptabaseApiFailure>> Function(
+typedef SendData = Future<Result<Unit, AptabaseHttpFailure>> Function(
   List<StorageEventItem> data,
 );
 
@@ -33,24 +30,25 @@ typedef SendData = Future<Result<Unit, AptabaseApiFailure>> Function(
 /// The [clearTimer] method cancels the timer and sets it to null.
 /// The [startTimer] method starts the timer if it is not already running.
 /// The timer will call the [flush] method and restart itself if there are items in the storage.
-/// The [forceFlush] method immediately clears the timer, calls the [flush] method, and starts the timer again.
+/// The [restart] method immediately clears the timer, calls the [flush] method, and starts the timer again.
 class BatchProcessor {
   final AptabaseStorage storage;
+  static const String logTag = 'BatchProcessor';
   BatchProcessor({
     required this.storage,
     required this.sendData,
-    this.sheduledDelay = AptabaseConstants.defaultSheduledDelay,
-    this.logger,
-    this.maxExportBatchSize = AptabaseConstants.defaultMaxExportBatchSize,
+    required this.logger,
+    required this.sheduledDelay,
+    required this.maxExportBatchSize,
   }) {
     storage.onValueChanged.listen((event) {
-      logger?.debug('onValueChanged $event');
+      logger.info('onValueChanged $event');
       startTimer();
     });
   }
   final int maxExportBatchSize;
   final Duration sheduledDelay;
-  final Logger? logger;
+  final AptabaseLogger logger;
   final SendData sendData;
   Timer? timer;
 
@@ -63,27 +61,31 @@ class BatchProcessor {
   ///
   /// Throws an exception if an error occurs during the process.
   Future<void> flush() async {
+    logger.debug('flush', tag: logTag);
     final items = await storage.readOffset(limit: maxExportBatchSize);
+    logger.debug('flush found ${items.length} items', tag: logTag);
     if (items.isNotEmpty) {
       final result = await sendData(items);
       return result.fold(
         (success) async {
-          logger?.info(
+          logger.info(
             'sendData success ${items.length} / $maxExportBatchSize items sent',
+            tag: logTag,
           );
           await storage.removeOffset(limit: maxExportBatchSize);
         },
         (failure) {
-          logger?.error('sendData failed with error: $failure');
+          logger.error('sendData failed with error: $failure', tag: logTag);
         },
       );
     } else {
-      logger?.info('sendData: no items to send');
+      logger.info('sendData: no items to send', tag: logTag);
     }
   }
 
   /// Clears the timer and sets it to null.
   void clearTimer() {
+    logger.debug('clearTimer', tag: logTag);
     timer?.cancel();
     timer = null;
   }
@@ -91,11 +93,14 @@ class BatchProcessor {
   /// Starts the timer if it is not already running.
   /// The timer will call the `flush` method and restart itself if there are items in the storage.
   void startTimer() {
+    logger.debug('startTimer isRunning[${timer != null}]', tag: logTag);
     if (timer != null) {
       return;
     }
+    logger.debug('- create new timer with delay[$sheduledDelay]', tag: logTag);
     timer = Timer(sheduledDelay, () async {
       await flush();
+      logger.debug('- count after flush: ${storage.count()}', tag: logTag);
       if (storage.count() > 0) {
         clearTimer();
         startTimer();
@@ -104,9 +109,9 @@ class BatchProcessor {
   }
 
   /// Forces an immediate flush by clearing the timer, calling the `flush` method, and starting the timer again.
-  Future<void> forceFlush() async {
+  Future<void> restart() async {
+    logger.debug('restart', tag: logTag);
     clearTimer();
-    await flush();
     startTimer();
   }
 }

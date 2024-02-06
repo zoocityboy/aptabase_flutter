@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../domain/aptabase_storage.dart';
-import '../domain/model/storage_event_item.dart';
-import '../core/logger.dart';
+import '../../core/aptabse_logger.dart';
+import '../../domain/domain.dart';
 
 ///
 class AptabaseInMemoryStorage implements AptabaseStorage {
-  ///
+  /// Constructor
   AptabaseInMemoryStorage(
     this.logger,
   ) {
@@ -16,9 +15,11 @@ class AptabaseInMemoryStorage implements AptabaseStorage {
       logger.debug('onValueChanged $event');
     });
   }
+  static const String logTag = 'AptabaseInMemoryStorage';
   final StreamController<int> _counterStreamController = StreamController<int>.broadcast();
+
   @override
-  final Logger logger;
+  final AptabaseLogger logger;
 
   ///
   @protected
@@ -28,9 +29,9 @@ class AptabaseInMemoryStorage implements AptabaseStorage {
   Future<void> remove(int id) async {
     if (storage.containsKey(id)) {
       storage.remove(id);
-      logger.info('remove: event item with id: $id removed', object: id);
+      logger.debug('remove: event item with id: $id removed', object: id, tag: logTag);
     } else {
-      logger.error('remove: event item with id: $id not found.');
+      logger.error('remove: event item with id: $id not found.', tag: logTag);
     }
   }
 
@@ -38,10 +39,10 @@ class AptabaseInMemoryStorage implements AptabaseStorage {
   Future<StorageEventItem?> read(int id) async {
     if (storage.containsKey(id)) {
       final item = storage[id];
-      logger.info('read: event item $item', object: item);
+      logger.debug('read', object: item?.prettyJson(), tag: logTag);
       return item;
     } else {
-      logger.error('read: event item with id: $id not found.');
+      logger.error('read id: $id not found.', tag: logTag);
     }
 
     return null;
@@ -50,41 +51,50 @@ class AptabaseInMemoryStorage implements AptabaseStorage {
   @override
   Future<List<StorageEventItem>> readOffset({int limit = 10, int offset = 0}) async {
     final items = storage.values.skip(offset).take(limit).toList();
-    logger.info('readAll limit: $limit offset: $offset: $items', object: items);
+    logger.debug('readOffset limit: $limit offset: $offset', object: items.map((e) => e.prettyJson()), tag: logTag);
     return items;
   }
 
   @override
   Future<void> write(StorageEventItem item) async {
-    logger.info('write: event item', object: item);
+    logger.debug('write: event item', object: item.prettyJson(), tag: logTag);
     storage[storage.length] = item;
     _counterStreamController.add(count());
   }
 
   @override
   void close() {
-    logger.info('close: storage closed');
+    logger.debug('close: storage closed', tag: logTag);
     _counterStreamController.close();
   }
 
   @override
   int count() {
-    logger.info('count: get count of items in storage');
+    logger.debug('count: get count of items in storage [${storage.length}]', tag: logTag);
     return storage.length;
   }
 
   @override
   Future<void> clear() async {
     storage.clear();
-    logger.info('clear: storage cleared');
+    logger.debug('clear: storage cleared', tag: logTag);
     _counterStreamController.add(count());
   }
 
   @override
   Future<void> removeOffset({int limit = 10, int offset = 0}) async {
     final items = storage.keys.skip(offset).take(limit).toList();
-    storage.removeWhere((key, value) => items.contains(key));
-    logger.info('removeOffset: removeOffset limit: $limit offset: $offset', object: items);
+    if (items.isEmpty) {
+      return;
+    }
+    logger.debug('removeOffset: removeOffset limit: $limit offset: $offset', object: items, tag: logTag);
+    if (offset == 0 && items.length == storage.length) {
+      storage.clear();
+    } else {
+      storage.removeWhere((key, value) => items.contains(key));
+    }
+
+    _counterStreamController.add(count());
   }
 
   @override

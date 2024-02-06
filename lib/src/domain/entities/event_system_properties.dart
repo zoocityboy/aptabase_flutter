@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'storage_event_item.dart';
 
 /// Represents the system properties of an event.
@@ -9,13 +8,7 @@ part of 'storage_event_item.dart';
 
 @immutable
 class EventSystemProperties {
-  final bool isDebug;
-  final String osName;
-  final String osVersion;
-  final String locale;
-  final String appVersion;
-  final String appBuildNumber;
-  final String sdkVersion;
+  /// Constructs a new [EventSystemProperties] instance.
   const EventSystemProperties({
     required this.isDebug,
     required this.osName,
@@ -26,6 +19,28 @@ class EventSystemProperties {
     required this.sdkVersion,
   });
 
+  /// Indicates whether the application is running in debug mode or not.
+  final bool isDebug;
+
+  /// The name of the operating system.
+  final String osName;
+
+  /// The version of the operating system.
+  final String osVersion;
+
+  /// The locale of the operating system.
+  final String locale;
+
+  /// The version of the application.
+  final String appVersion;
+
+  /// The build number of the application.
+  final String appBuildNumber;
+
+  /// The version of the SDK.
+  final String sdkVersion;
+
+  // coverage:ignore-start
   @override
   bool operator ==(covariant EventSystemProperties other) {
     if (identical(this, other)) return true;
@@ -49,6 +64,7 @@ class EventSystemProperties {
         appBuildNumber.hashCode ^
         sdkVersion.hashCode;
   }
+  // coverage:ignore-end
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -63,6 +79,9 @@ class EventSystemProperties {
   }
 
   String toJson() => json.encode(toMap());
+
+  /// Returns a pretty-printed JSON string representation of the [EventSystemProperties].
+  String prettyJson() => const JsonEncoder.withIndent('  ').convert(toMap());
 
   @override
   String toString() {

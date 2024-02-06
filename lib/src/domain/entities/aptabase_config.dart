@@ -1,16 +1,18 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/foundation.dart';
 
 import '../../core/aptabase_constants.dart';
-import '../../core/logger.dart';
-import '../aptabase_storage.dart';
+import '../../core/aptabse_logger.dart';
 import '../enum/aptabase_hosts.dart';
 import '../error/aptabase_exception.dart';
+import '../services/aptabase_storage.dart';
+
+/// A callback function that logs the message and the object.
+typedef AptabaseStorageBuilder = Future<AptabaseStorage> Function(AptabaseLogger logger);
 
 /// Additional options for initializing the Aptabase SDK.
 /// Represents the initialization options for the application.
 ///
-/// The [AptabasConfig] class is used to configure various options for the application initialization.
+/// The [AptabaseConfig] class is used to configure various options for the application initialization.
 /// It includes properties such as [debug], [customBaseUrl], [sessionTimeout], [sheduledDelay], and [host].
 ///
 /// The [debug] property indicates whether the application is running in debug mode or not.
@@ -26,19 +28,11 @@ import '../error/aptabase_exception.dart';
 /// The [baseUrl] property returns the base URL to be used for API requests based on the [customBaseUrl] and [host] properties.
 /// If [customBaseUrl] is specified and [host] is [AptabaseHosts.sh], the [customBaseUrl] will be used.
 /// Otherwise, the URL from the [host] enum value will be used.
-typedef AptabaseStorageBuilder = Future<AptabaseStorage> Function(Logger logger);
-
+///
 @immutable
-class AptabasConfig {
-  final String appKey;
-  final bool debug;
-  final String? customBaseUrl;
-  final Duration sessionTimeout;
-  final Duration sheduledDelay;
-  final int maxExportBatchSize;
-  final AptabaseStorageBuilder? storageBuilder;
-
-  const AptabasConfig({
+class AptabaseConfig {
+  /// Creates a new instance of [AptabaseConfig].
+  const AptabaseConfig({
     required this.appKey,
     this.customBaseUrl,
     this.debug = false,
@@ -46,12 +40,37 @@ class AptabasConfig {
     this.sheduledDelay = AptabaseConstants.defaultSheduledDelay,
     this.maxExportBatchSize = AptabaseConstants.defaultMaxExportBatchSize,
     this.storageBuilder,
+    this.logCallback,
   });
 
-  @override
-  bool operator ==(covariant AptabasConfig other) {
-    if (identical(this, other)) return true;
+  /// The app key for the application.
+  final String appKey;
 
+  /// Indicates whether the application is running in debug mode or not.
+  final bool debug;
+
+  /// The custom base URL for the application.
+  final String? customBaseUrl;
+
+  /// The duration after which a session will be considered timed out.
+  final Duration sessionTimeout;
+
+  /// The duration after which the data will be flushed to the server.
+  final Duration sheduledDelay;
+
+  /// The maximum export batch size.
+  final int maxExportBatchSize;
+
+  /// The storage builder function.
+  final AptabaseStorageBuilder? storageBuilder;
+
+  /// The log callback function.
+  final AptabaseLogCallback? logCallback;
+
+  // coverage:ignore-start
+  @override
+  bool operator ==(covariant AptabaseConfig other) {
+    if (identical(this, other)) return true;
     return other.appKey == appKey &&
         other.debug == debug &&
         other.customBaseUrl == customBaseUrl &&
@@ -71,12 +90,13 @@ class AptabasConfig {
         maxExportBatchSize.hashCode ^
         storageBuilder.hashCode;
   }
+  // coverage:ignore-end
 
   /// Validates the app key.
   bool validateKey() {
     final parts = appKey.split('-');
     if (parts.isEmpty || parts.length != 3) {
-      throw const AppKeyInvalidException();
+      throw const AptabaseInvalidAppKeyException();
     }
     return true;
   }
@@ -86,6 +106,7 @@ class AptabasConfig {
         (e) => e.name.toLowerCase() == appKey.split('-')[1].toLowerCase(),
       );
 
+  /// Returns the base URL to be used for API requests.
   Uri? get baseUrl {
     if (customBaseUrl != null && host == AptabaseHosts.sh) {
       return Uri.parse(customBaseUrl!);

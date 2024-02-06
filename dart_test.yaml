@@ -8,11 +8,11 @@ tags:
       all:
         skip: false
 
-override_platforms:
-  chrome:
-    settings:
-      headless: true
-  firefox:
-    settings:
-      # headless argument has to be set explicitly for non-chrome browsers
-      arguments: --headless
+# override_platforms:
+  # chrome:
+  #   settings:
+  #     headless: true
+  # firefox:
+  #   settings:
+  #     # headless argument has to be set explicitly for non-chrome browsers
+  #     arguments: --headless

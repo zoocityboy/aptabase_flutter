@@ -1,5 +1,5 @@
-import '../core/logger.dart';
-import 'model/storage_event_item.dart';
+import '../../core/aptabse_logger.dart';
+import '../entities/storage_event_item.dart';
 
 /// An abstract class representing a storage interface for Aptabase.
 abstract class AptabaseStorage {
@@ -9,7 +9,7 @@ abstract class AptabaseStorage {
   });
 
   /// The logger.
-  final Logger logger;
+  final AptabaseLogger logger;
 
   /// A stream of values that notifies when the value of the storage changes.
   final Stream<int> onValueChanged = const Stream.empty();

@@ -1,7 +1,5 @@
-/// The Flutter SDK for Aptabase, a privacy-first and simple analytics platform for apps.
+// ignore_for_file:  sort_constructors_first
 // ignore_for_file: public_member_api_docs
-
-library aptabase_flutter;
 
 import 'dart:async';
 
@@ -9,19 +7,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:result_dart/result_dart.dart';
 
-import 'domain/aptabase_client.dart';
-import 'domain/aptabase_storage.dart';
-import 'domain/error/aptabase_exception.dart';
-import 'domain/error/aptabase_failure.dart';
-import 'domain/model/aptabase_config.dart';
-import 'domain/model/aptabase_track_event.dart';
-import 'domain/model/storage_event_item.dart';
-import 'infrastructure/aptabase_api_client.dart';
-import 'infrastructure/aptabase_inmemory__storage.dart';
-import 'infrastructure/batch_processor.dart';
-import 'core/logger.dart';
-import 'infrastructure/session.dart';
-import 'core/sys_info.dart';
+import 'core/core.dart';
+import 'data/data.dart';
+import 'domain/domain.dart';
 
 /// Aptabase Client for Flutter
 ///
@@ -29,10 +17,10 @@ import 'core/sys_info.dart';
 class Aptabase {
   /// Initialize the logger, session, client, storage and processor.
   Aptabase._(
-    AptabasConfig config,
+    AptabaseConfig config,
     SystemInfo sysInfo, {
     required this.logger,
-    required AptabaseStorage storage,
+    required this.storage,
   }) {
     session = AptabaseSession(sessionTimeout: config.sessionTimeout);
     client = AptabaseApiClient(
@@ -42,14 +30,7 @@ class Aptabase {
 
     processor = BatchProcessor(
       storage: storage,
-      sendData: (items) async {
-        if (!isConnected.value) {
-          logger.error('sendData: no internet connection');
-          return const Failure(NoInternetApiFailure());
-        }
-        final result = await client.sendEvents(items);
-        return result;
-      },
+      sendData: sendData,
       logger: logger,
       maxExportBatchSize: config.maxExportBatchSize,
       sheduledDelay: config.sheduledDelay,
@@ -57,7 +38,7 @@ class Aptabase {
     systemInfo = sysInfo;
     initConnectivity();
   }
-  late final Logger logger;
+  late final AptabaseLogger logger;
   late final AptabaseClient client;
   late final AptabaseSession session;
   late final AptabaseStorage storage;
@@ -65,7 +46,9 @@ class Aptabase {
   late final SystemInfo systemInfo;
   final ValueNotifier<bool> isConnected = ValueNotifier(true);
   late final BatchProcessor processor;
+
   @protected
+  @visibleForTesting
   late final StreamSubscription<ConnectivityResult>? connectivitySubscription;
 
   static Aptabase? _instance;
@@ -77,6 +60,16 @@ class Aptabase {
     return _instance!;
   }
 
+  @protected
+  Future<Result<Unit, AptabaseHttpFailure>> sendData(List<StorageEventItem> items) async {
+    if (!isConnected.value) {
+      logger.error('sendData: no internet connection');
+      return const Failure(OfflineHttpFailure());
+    }
+    final result = await client.sendEvents(items);
+    return result;
+  }
+
   void initConnectivity() {
     connectivity = Connectivity()
       ..checkConnectivity().then((value) {
@@ -84,7 +77,12 @@ class Aptabase {
       });
     connectivitySubscription = connectivity.onConnectivityChanged.listen(
       (event) {
+        /// if the previous state was not connected and the current state is connected, force flush the processor.
+        final previousState = isConnected.value;
         isConnected.value = event != ConnectivityResult.none;
+        if (isConnected.value && !previousState) {
+          processor.startTimer();
+        }
       },
       onError: (e) {
         isConnected.value = false;
@@ -93,6 +91,7 @@ class Aptabase {
   }
 
   /// Closes the connection to the Aptabase server.
+  /// and storage.
   void close() {
     storage.close();
     connectivitySubscription?.cancel();
@@ -100,11 +99,14 @@ class Aptabase {
 
   /// Initializes the Aptabase SDK with the given appKey.
   static Future<Result<Aptabase, AptabaseFailure>> init(
-    AptabasConfig config,
+    AptabaseConfig config,
   ) async {
     try {
       config.validateKey();
-      final logger = Logger(isDebug: config.debug);
+      final logger = AptabaseLogger(
+        isDebug: config.debug,
+        logCallback: config.logCallback,
+      );
       final sysInfo = await SystemInfo.get();
       final storage = await config.storageBuilder?.call(logger) ?? AptabaseInMemoryStorage(logger);
 
@@ -116,7 +118,7 @@ class Aptabase {
       );
       return Success(_instance!);
     } on AptabaseException catch (e) {
-      return Failure(AptabaseFailure.tryParse(e));
+      return Failure(AptabaseExceptionFailure(e));
     }
   }
 
@@ -124,29 +126,34 @@ class Aptabase {
   Future<void> trackCustomEvent(
     String eventName, [
     Map<String, dynamic>? props,
-  ]) async {
-    final eventData = StorageEventItem.create(
-      eventName: eventName,
-      props: props,
-      session: session,
-      systemInfo: systemInfo,
-    );
-    await storage.write(eventData);
-  }
+  ]) =>
+      storage.write(
+        StorageEventItem.create(
+          eventName: eventName,
+          props: props,
+          session: session,
+          systemInfo: systemInfo,
+        ),
+      );
 
   Future<void> trackEvent(
     AptabaseTrackEvent event,
-  ) async {
-    final eventData = StorageEventItem.create(
+  ) {
+    final data = StorageEventItem.create(
       eventName: event.eventName,
       props: event.props,
       session: session,
       systemInfo: systemInfo,
     );
-    await storage.write(eventData);
+    return storage.write(data);
   }
 
   Future<void> flush() async {
     await processor.flush();
+  }
+
+  @override
+  String toString() {
+    return 'Aptabase(logger: $logger, client: $client, session: $session, storage: $storage, connectivity: $connectivity, systemInfo: $systemInfo, processor: $processor, connectivitySubscription: $connectivitySubscription)';
   }
 }

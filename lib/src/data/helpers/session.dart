@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
-import '../domain/extensions/datetime_extension.dart';
+import '../../domain/extensions/datetime_extension.dart';
 
 /// Represents a session with a session ID and creation timestamp.
 /// The session ID is evaluated based on the session timeout.

@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 
-import 'aptabase_exception.dart';
+import '../domain.dart';
+import 'aptabase_error_response.dart';
 
 /// Represents a failure that can occur in the Aptabase domain.
 @immutable
@@ -14,15 +15,14 @@ sealed class AptabaseFailure {
   String toString() {
     return 'AptabaseFailure(message: $message)';
   }
+}
 
-  /// Tries to parse the given [error] and returns an appropriate [AptabaseFailure] instance.
-  static AptabaseFailure tryParse(Object error) {
-    return switch (error) {
-      // ignore: unused_local_variable
-      AptabaseException(message: final message) => const AptabseGenericFailure(),
-      _ => const UnknownApiFailure()
-    };
-  }
+/// Represents a failure caused by an AptabaseException.
+class AptabaseExceptionFailure extends AptabaseFailure {
+  /// Constructor for creating an AptabaseExceptionFailure with the given exception.
+  ///
+  /// The [exception] parameter is the AptabaseException that caused the failure.
+  AptabaseExceptionFailure(AptabaseException exception) : super(exception.toString());
 }
 
 /// Represents a runtime failure in the Aptabase domain.
@@ -42,41 +42,43 @@ class AptabseGenericFailure extends AptabaseRuntimeFailure {
 }
 
 /// Represents a failure related to the Aptabase API.
-sealed class AptabaseApiFailure extends AptabaseFailure {
-  const AptabaseApiFailure(this.statusCode, super.message);
+sealed class AptabaseHttpFailure extends AptabaseFailure {
+  const AptabaseHttpFailure(
+    this.statusCode,
+    super.message,
+  );
 
   /// The HTTP status code.
   final int statusCode;
+}
 
-  /// Tries to parse the given [error] and returns an appropriate [AptabaseApiFailure] instance.
-  static AptabaseApiFailure tryParse(Object error) {
-    if (error is AptabaseApiFailure) {
-      return error;
-    }
-    return const UnknownApiFailure();
+/// Represents a "Client Error" API failure.
+class HttpFailure extends AptabaseHttpFailure {
+  /// Creates a new "Client Error" API failure.
+  const HttpFailure(super.statusCode, super.message, {this.error});
+
+  /// The error object.
+  final AptabaseErrorResponse? error;
+
+  @override
+  String toString() {
+    return 'HttpFailure(statusCode: $statusCode, message: $message, error: $error)';
   }
 }
 
-/// Represents an unknown API failure.
-class UnknownApiFailure extends AptabaseApiFailure {
-  /// Creates a new unknown API failure.
-  const UnknownApiFailure() : super(0, 'Unknown Error');
-}
+/// Represents an "Offline" API failure.
+class OfflineHttpFailure extends AptabaseHttpFailure {
+  /// Creates an "Offline" API failure.
+  const OfflineHttpFailure() : super(0, 'Offline');
 
-/// Represents a "Not Found" API failure.
-class NotFoundApiFailure extends AptabaseApiFailure {
-  /// Creates a new "Not Found" API failure.
-  const NotFoundApiFailure(int statusCode) : super(statusCode, 'Not Found');
+  @override
+  String toString() {
+    return 'OfflineHttpFailure(statusCode: $statusCode, message: $message)';
+  }
 }
 
 /// Represents a "Server Error" API failure.
-class ServerApiFailure extends AptabaseApiFailure {
+class ServerApiFailure extends AptabaseHttpFailure {
   /// Creates a new "Server Error" API failure.
-  const ServerApiFailure() : super(500, 'Server Error');
-}
-
-/// Represents a "No Internet" API failure.
-class NoInternetApiFailure extends AptabaseApiFailure {
-  /// Creates a new "No Internet" API failure.
-  const NoInternetApiFailure() : super(0, 'No Internet');
+  const ServerApiFailure(int statusCode) : super(statusCode, 'Server Error');
 }

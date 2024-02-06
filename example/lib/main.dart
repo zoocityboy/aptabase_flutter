@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:aptabase_flutter/aptabase_flutter.dart';
 import 'package:example/events.dart';
@@ -7,13 +8,32 @@ import 'package:flutter/material.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  (await Aptabase.init(const AptabasConfig(
-    appKey: "A-EU-9204469084",
+  (await Aptabase.init(AptabaseConfig(
+    // appKey: "A-EU-9204469084",
+    appKey: "A-SH-9379813495",
+    customBaseUrl: "http://192.168.1.117:8000",
     debug: true,
+    maxExportBatchSize: 20,
+    sheduledDelay: const Duration(seconds: 10),
+    storageBuilder: (logger) async {
+      debugPrint('Aptabase init storageBuilder');
+      return AptabaseInMemoryStorage(logger);
+    },
+    logCallback: (record) {
+      final customMessage = record.object != null ? '${record.message}\n ${record.object}' : record.message;
+      developer.log(
+        customMessage,
+        error: record.error,
+        stackTrace: record.stackTrace,
+        level: record.level.value,
+        name: 'Aptabase${record.tag != null ? ':${record.tag}' : ''}',
+        time: record.createdAt,
+      );
+    },
   )))
       .fold(
+    (success) => debugPrint('Aptabase init success'),
     (failure) => debugPrint('Aptabase init failed: $failure'),
-    (_) => debugPrint('Aptabase init success'),
   );
 
   runApp(const MyApp());
@@ -93,13 +113,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
+    Aptabase.instance.close();
     _listener.dispose();
     super.dispose();
   }
 
-  void _incrementCounter() {
-    Aptabase.instance.trackEvent(IncrementEvent(_counter));
+  void _incrementMultiple() {
+    for (var i = 0; i < 10; i++) {
+      setState(() {
+        _counter++;
+      });
+      Aptabase.instance.trackEvent(IncrementEvent(_counter));
+    }
+  }
 
+  void _incrementCounter() {
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
@@ -108,6 +136,19 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
     });
+    Aptabase.instance.trackEvent(IncrementEvent(_counter));
+  }
+
+  void _decrementCounter() {
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter--;
+    });
+    Aptabase.instance.trackEvent(DecrementEvent(_counter));
   }
 
   @override
@@ -154,11 +195,22 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            const Divider(),
+            ButtonBar(children: [
+              ElevatedButton(
+                onPressed: _incrementCounter,
+                child: const Text('Increment'),
+              ),
+              ElevatedButton(
+                onPressed: _decrementCounter,
+                child: const Text('Decrement'),
+              ),
+            ])
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: _incrementMultiple,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.

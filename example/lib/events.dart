@@ -4,18 +4,39 @@ import 'package:flutter/material.dart';
 /// This file contains the definition of the [EventKeys] class, which provides constant keys for events.
 abstract class EventKeys {
   static const String incrementEventName = 'increment';
+  static const String decrementEventName = 'decrement';
   static const String lifecycleEventKey = 'app_lifecycle';
+}
+
+sealed class CounterEvent extends AptabaseTrackEvent {
+  CounterEvent(String eventName, int counter)
+      : super(
+          eventName: eventName,
+          props: <String, Object>{"counter": counter},
+        );
 }
 
 /// Represents an event that increments a counter.
 ///
 /// This event is used to track the increment action in the app.
 /// It contains the current value of the counter as a property.
-class IncrementEvent extends AptabaseTrackEvent {
+class IncrementEvent extends CounterEvent {
   IncrementEvent(int counter)
       : super(
-          eventName: EventKeys.incrementEventName,
-          props: <String, Object>{"counter": counter},
+          EventKeys.incrementEventName,
+          counter,
+        );
+}
+
+/// Represents an event that increments a counter.
+///
+/// This event is used to track the increment action in the app.
+/// It contains the current value of the counter as a property.
+class DecrementEvent extends CounterEvent {
+  DecrementEvent(int counter)
+      : super(
+          EventKeys.decrementEventName,
+          counter,
         );
 }
 
@@ -28,6 +49,6 @@ class LifeCycleEvent extends AptabaseTrackEvent {
   LifeCycleEvent(AppLifecycleState state)
       : super(
           eventName: EventKeys.lifecycleEventKey,
-          props: <String, Object>{"state": state.toString()},
+          props: <String, Object>{"state": state.name},
         );
 }

@@ -63,6 +63,7 @@ class SystemInfo {
     );
   }
 
+  // coverage:ignore-start
   /// Returns the name of the operating system.
   static Future<String?> _getOsName(DeviceInfoPlugin deviceInfo) async {
     if (kIsWeb) {
@@ -118,4 +119,5 @@ class SystemInfo {
 
     return _kUnknownOsVersion;
   }
+  // coverage:ignore-end
 }

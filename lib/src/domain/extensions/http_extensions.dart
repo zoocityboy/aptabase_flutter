@@ -23,7 +23,7 @@ extension HttpClientRequestX on HttpClientRequest {
         HttpHeaders.contentTypeHeader,
         AptabaseConstants.headerContentTypeValue,
       )
-      ..set(HttpHeaders.contentEncodingHeader, 'gzip');
+      ..set(HttpHeaders.contentEncodingHeader, 'gzip deflate compress');
     if (!kIsWeb) {
       headers.set(HttpHeaders.userAgentHeader, AptabaseConstants.sdkVersion);
     }

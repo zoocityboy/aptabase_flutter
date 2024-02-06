@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '../version.g.dart';
+import 'version.g.dart';
 
 /// Aptabase SDK constants
 @protected

@@ -4,8 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../core/aptabase_constants.dart';
-import '../../infrastructure/session.dart';
 import '../../core/sys_info.dart';
+import '../../data/helpers/session.dart';
 import '../extensions/datetime_extension.dart';
 
 part 'event_system_properties.dart';
@@ -66,7 +66,7 @@ class StorageEventItem {
       sessionId: session.evalSessionId(),
     );
   }
-
+  // coverage:ignore-start
   @override
   bool operator ==(covariant StorageEventItem other) {
     if (identical(this, other)) return true;
@@ -81,6 +81,7 @@ class StorageEventItem {
   int get hashCode {
     return eventName.hashCode ^ props.hashCode ^ timestamp.hashCode ^ sessionId.hashCode;
   }
+  // coverage:ignore-end
 
   @override
   String toString() {
@@ -95,15 +96,22 @@ EventItem(
   }
 
   /// Converts the [StorageEventItem] to a JSON string representation.
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toMap({bool redact = false}) {
     return <String, dynamic>{
       'timestamp': timestamp.toIso8601String(),
       'sessionId': sessionId,
       'eventName': eventName,
-      'systemProps': systemProperties.toMap(),
+      'systemProps': redact ? '...' : systemProperties.toMap(),
       'props': props,
     };
   }
 
   String toJson() => json.encode(toMap());
+
+  /// Returns a pretty-printed JSON string representation of the [StorageEventItem].
+  String prettyJson() => const JsonEncoder.withIndent('  ').convert(
+        toMap(
+          redact: true,
+        ),
+      );
 }
